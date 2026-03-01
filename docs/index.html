@@ -23,32 +23,42 @@
       --danger: #ff4d4d;
       --safe-high: #00ff88;
       --safe-med: #a333ff;
+      --tabbar-h: calc(56px + env(safe-area-inset-bottom));
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    html, body { height: 100%; }
 
     body {
       background: var(--bg);
       color: white;
       font-family: -apple-system, 'SF Pro Display', 'Inter', sans-serif;
-      min-height: 100dvh;
-      padding-bottom: env(safe-area-inset-bottom);
+      overflow: hidden;
+    }
+
+    /* ── Layout ── */
+    .screen {
+      position: fixed; inset: 0;
+      bottom: var(--tabbar-h);
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
     }
 
     .app {
       max-width: 600px;
       margin: 0 auto;
-      padding: 0 16px;
+      padding: 0 16px 24px;
     }
 
     /* ── Header ── */
     .header {
-      padding-top: calc(env(safe-area-inset-top) + 28px);
-      padding-bottom: 24px;
+      padding-top: calc(env(safe-area-inset-top) + 24px);
+      padding-bottom: 20px;
       text-align: center;
     }
     .logo {
-      font-size: clamp(38px, 12vw, 54px);
+      font-size: clamp(36px, 11vw, 50px);
       font-weight: 900;
       color: #fff;
       letter-spacing: -3px;
@@ -65,7 +75,6 @@
     /* ── Search bar ── */
     .search-wrap {
       display: flex;
-      gap: 0;
       margin-bottom: 20px;
     }
     .search-input {
@@ -96,14 +105,9 @@
     }
     .search-btn:active { opacity: 0.8; }
 
-    /* ── Results meta ── */
-    .results-meta {
-      font-size: 11px;
-      color: #444;
-      margin-bottom: 12px;
-    }
-
     /* ── Result card ── */
+    .results-meta { font-size: 11px; color: #444; margin-bottom: 12px; }
+
     .card {
       background: var(--card);
       border: 1px solid #1e1e1e;
@@ -167,6 +171,71 @@
     .btn-dl     { background: var(--accent); color: #000; }
     .btn-magnet { background: var(--danger); color: #fff; }
     .btn-copied { background: #1a7a3c; color: #fff; }
+    .btn-delete { background: #1e1e1e; color: #666; flex: 0 0 44px; padding: 11px 0; }
+    .btn-reopen { background: var(--accent); color: #000; }
+
+    /* ── Downloads tab ── */
+    .dl-section-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      color: #444;
+      text-transform: uppercase;
+      margin: 18px 0 10px;
+    }
+
+    .dl-card {
+      background: var(--card);
+      border: 1px solid #1e1e1e;
+      border-radius: 16px;
+      padding: 14px 16px;
+      margin-bottom: 10px;
+    }
+
+    .dl-card-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .dl-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: #fff;
+      line-height: 1.35;
+      word-break: break-word;
+      flex: 1;
+    }
+
+    .dl-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      color: #555;
+      margin-bottom: 12px;
+    }
+
+    .dl-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+    .dl-dot {
+      width: 7px; height: 7px;
+      background: var(--accent);
+      border-radius: 50%;
+      animation: pulse 1.4s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: 0.4; transform: scale(0.7); }
+    }
 
     /* ── States ── */
     .state {
@@ -178,7 +247,7 @@
       padding: 80px 20px;
       text-align: center;
     }
-    .state-icon { font-size: 48px; }
+    .state-icon  { font-size: 48px; }
     .state-title { font-size: 17px; font-weight: 600; color: #444; }
     .state-sub   { font-size: 13px; color: #333; }
 
@@ -191,7 +260,7 @@
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* ── Install banner (iOS only) ── */
+    /* ── Install banner ── */
     .install-banner {
       display: none;
       align-items: center;
@@ -206,45 +275,117 @@
     }
     .install-banner .arrow { color: var(--accent); font-size: 18px; }
     .install-banner.visible { display: flex; }
+
+    /* ── Tab Bar ── */
+    .tabbar {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      height: var(--tabbar-h);
+      background: rgba(10,10,10,0.95);
+      border-top: 1px solid #1e1e1e;
+      display: flex;
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      z-index: 100;
+    }
+
+    .tab {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding-bottom: env(safe-area-inset-bottom);
+      gap: 4px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      position: relative;
+      -webkit-appearance: none;
+    }
+    .tab:active { opacity: 0.6; }
+
+    .tab-icon { font-size: 22px; line-height: 1; }
+    .tab-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: #555;
+      letter-spacing: 0.2px;
+    }
+    .tab.active .tab-label { color: var(--accent); }
+    .tab.active .tab-icon  { filter: drop-shadow(0 0 6px var(--accent)); }
+
+    .tab-badge {
+      position: absolute;
+      top: 8px;
+      right: calc(50% - 18px);
+      background: var(--danger);
+      color: white;
+      font-size: 10px;
+      font-weight: 900;
+      min-width: 18px;
+      height: 18px;
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 4px;
+    }
+    .tab-badge.hidden { display: none; }
   </style>
 </head>
 <body>
-<div class="app">
 
-  <!-- Header -->
-  <div class="header">
-    <div class="logo">QWARTZ</div>
-    <div class="logo-sub">ENGINE</div>
-  </div>
+<!-- ══ SCREEN: Recherche ══ -->
+<div class="screen" id="screen-search">
+  <div class="app">
+    <div class="header">
+      <div class="logo">QWARTZ</div>
+      <div class="logo-sub">ENGINE</div>
+    </div>
 
-  <!-- Install banner (shown on iOS Safari outside standalone) -->
-  <div class="install-banner" id="installBanner">
-    <span class="arrow">⬆</span>
-    <span>Appuie sur <strong>Partager</strong> puis <strong>"Sur l'écran d'accueil"</strong> pour installer l'app</span>
-  </div>
+    <div class="install-banner" id="installBanner">
+      <span class="arrow">⬆</span>
+      <span>Appuie sur <strong>Partager</strong> puis <strong>"Sur l'écran d'accueil"</strong> pour installer</span>
+    </div>
 
-  <!-- Search -->
-  <div class="search-wrap">
-    <input
-      type="search"
-      id="searchInput"
-      class="search-input"
-      placeholder="Rechercher..."
-      autocorrect="off"
-      autocapitalize="off"
-      enterkeyhint="search"
-    >
-    <button class="search-btn" id="searchBtn" onclick="doSearch()">SEARCH</button>
-  </div>
+    <div class="search-wrap">
+      <input type="search" id="searchInput" class="search-input"
+        placeholder="Rechercher..." autocorrect="off" autocapitalize="off" enterkeyhint="search">
+      <button class="search-btn" onclick="doSearch()">SEARCH</button>
+    </div>
 
-  <!-- Content -->
-  <div id="content">
-    <div class="state">
-      <div class="state-icon">✦</div>
-      <div class="state-title">Lance une recherche</div>
+    <div id="content">
+      <div class="state">
+        <div class="state-icon">✦</div>
+        <div class="state-title">Lance une recherche</div>
+      </div>
     </div>
   </div>
+</div>
 
+<!-- ══ SCREEN: Téléchargements ══ -->
+<div class="screen" id="screen-downloads" style="display:none">
+  <div class="app">
+    <div class="header">
+      <div class="logo" style="font-size:clamp(28px,9vw,40px)">TÉLÉCHARGEMENTS</div>
+      <div class="logo-sub">HISTORIQUE</div>
+    </div>
+    <div id="dl-content"></div>
+  </div>
+</div>
+
+<!-- ══ TAB BAR ══ -->
+<div class="tabbar">
+  <button class="tab active" id="tab-search" onclick="switchTab('search')">
+    <span class="tab-icon">🔍</span>
+    <span class="tab-label">Recherche</span>
+  </button>
+  <button class="tab" id="tab-downloads" onclick="switchTab('downloads')">
+    <span class="tab-icon">⬇️</span>
+    <span class="tab-label">Téléchargements</span>
+    <span class="tab-badge hidden" id="dl-badge">0</span>
+  </button>
 </div>
 
 <script>
@@ -255,17 +396,26 @@
 
   // ── iOS Install Banner ──
   const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
-  const isStandalone = window.navigator.standalone === true;
-  if (isIOS && !isStandalone) {
+  if (isIOS && !window.navigator.standalone) {
     document.getElementById('installBanner').classList.add('visible');
   }
 
   // ── State ──
-  const input   = document.getElementById('searchInput');
-  const content = document.getElementById('content');
-  let torrents  = [];
+  const input = document.getElementById('searchInput');
+  let torrents = [];
+  let currentTab = 'search';
 
   input.addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(); });
+
+  // ── Tab switching ──
+  function switchTab(tab) {
+    currentTab = tab;
+    document.getElementById('screen-search').style.display    = tab === 'search'    ? '' : 'none';
+    document.getElementById('screen-downloads').style.display = tab === 'downloads' ? '' : 'none';
+    document.getElementById('tab-search').classList.toggle('active',    tab === 'search');
+    document.getElementById('tab-downloads').classList.toggle('active', tab === 'downloads');
+    if (tab === 'downloads') renderDownloads();
+  }
 
   // ── Helpers ──
   function formatSize(bytes) {
@@ -278,28 +428,110 @@
   }
 
   function escHtml(s) {
-    return String(s)
-      .replace(/&/g,'&amp;')
-      .replace(/"/g,'&quot;')
-      .replace(/</g,'&lt;')
-      .replace(/>/g,'&gt;');
+    return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function timeAgo(ts) {
+    const diff = Math.floor((Date.now() - ts) / 1000);
+    if (diff < 60)   return "À l'instant";
+    if (diff < 3600) return Math.floor(diff / 60) + ' min';
+    if (diff < 86400) return Math.floor(diff / 3600) + 'h';
+    return Math.floor(diff / 86400) + 'j';
+  }
+
+  // ── Downloads storage ──
+  function loadDownloads() {
+    try { return JSON.parse(localStorage.getItem('qwartz_downloads') || '[]'); }
+    catch { return []; }
+  }
+
+  function saveDownloads(list) {
+    localStorage.setItem('qwartz_downloads', JSON.stringify(list));
+    updateBadge(list.length);
+  }
+
+  function addDownload(item) {
+    const list = loadDownloads();
+    // évite les doublons (même magnet)
+    if (list.some(d => d.magnet === item.magnet)) return;
+    list.unshift({ ...item, addedAt: Date.now() });
+    saveDownloads(list);
+    updateBadge(list.length);
+  }
+
+  function removeDownload(magnet) {
+    const list = loadDownloads().filter(d => d.magnet !== magnet);
+    saveDownloads(list);
+    renderDownloads();
+  }
+
+  function clearDownloads() {
+    saveDownloads([]);
+    renderDownloads();
+  }
+
+  function updateBadge(count) {
+    const badge = document.getElementById('dl-badge');
+    if (count > 0) { badge.textContent = count; badge.classList.remove('hidden'); }
+    else           { badge.classList.add('hidden'); }
+  }
+
+  // ── Render downloads ──
+  function renderDownloads() {
+    const list = loadDownloads();
+    const el   = document.getElementById('dl-content');
+
+    if (!list.length) {
+      el.innerHTML = `
+        <div class="state">
+          <div class="state-icon">📭</div>
+          <div class="state-title">Aucun téléchargement</div>
+          <div class="state-sub">Lance une recherche et appuie sur TÉLÉCHARGER</div>
+        </div>`;
+      return;
+    }
+
+    const cards = list.map((d, idx) => `
+      <div class="dl-card" id="dlcard-${idx}">
+        <div class="dl-card-top">
+          <div class="dl-name">${escHtml(d.name)}</div>
+        </div>
+        <div class="dl-meta">
+          <span class="dl-status"><span class="dl-dot"></span> Envoyé au client</span>
+          <span class="sep">•</span>
+          <span>${d.size}</span>
+          <span class="sep">•</span>
+          <span>${timeAgo(d.addedAt)}</span>
+        </div>
+        <div class="btn-row">
+          <a href="${escHtml(d.magnet)}" class="btn btn-reopen">↗ Rouvrir</a>
+          <button class="btn btn-delete" onclick="removeDownload('${encodeURIComponent(d.magnet)}')">🗑</button>
+        </div>
+      </div>`).join('');
+
+    el.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+        <div class="dl-section-title">${list.length} élément(s)</div>
+        <button onclick="clearDownloads()" style="background:none;border:none;color:#555;font-size:12px;cursor:pointer;font-weight:600;">Tout effacer</button>
+      </div>
+      ${cards}`;
   }
 
   // ── Fetch via CORS proxy ──
   async function fetchTorrents(q) {
-    const apiUrl  = 'https://apibay.org/q.php?q=' + encodeURIComponent(q);
-    const proxy   = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(apiUrl);
-    const res     = await fetch(proxy, { cache: 'no-store' });
+    const apiUrl = 'https://apibay.org/q.php?q=' + encodeURIComponent(q);
+    const proxy  = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(apiUrl);
+    const res    = await fetch(proxy, { cache: 'no-store' });
     if (!res.ok) throw new Error('HTTP ' + res.status);
-    const text = await res.text();
-    return JSON.parse(text);
+    return JSON.parse(await res.text());
   }
 
-  // ── Main search ──
+  // ── Search ──
   async function doSearch() {
     const q = input.value.trim();
     if (!q) return;
     input.blur();
+    const content = document.getElementById('content');
 
     content.innerHTML = `
       <div class="state">
@@ -338,7 +570,6 @@
       }
 
       renderResults();
-
     } catch (e) {
       content.innerHTML = `
         <div class="state">
@@ -350,6 +581,7 @@
   }
 
   function renderResults() {
+    const content = document.getElementById('content');
     const cards = torrents.map((r, idx) => `
       <div class="card">
         <span class="badge ${r.badgeClass}">${r.badgeLabel}</span>
@@ -360,7 +592,7 @@
           <span class="size">${r.size}</span>
         </div>
         <div class="btn-row">
-          <a href="${escHtml(r.magnet)}" class="btn btn-dl">⬇ TÉLÉCHARGER</a>
+          <a href="${escHtml(r.magnet)}" class="btn btn-dl" onclick="onDownload(${idx})">⬇ TÉLÉCHARGER</a>
           <button class="btn btn-magnet" id="cp-${idx}" onclick="copyMagnet(${idx})">🧲 MAGNET</button>
         </div>
       </div>`).join('');
@@ -369,23 +601,25 @@
       `<div class="results-meta">${torrents.length} résultat(s) avec seeders actifs</div>` + cards;
   }
 
+  // ── Track download ──
+  function onDownload(idx) {
+    const r = torrents[idx];
+    addDownload({ name: r.name, size: r.size, magnet: r.magnet });
+  }
+
+  // ── Copy magnet ──
   function copyMagnet(idx) {
     const text = torrents[idx].magnet;
     const btn  = document.getElementById('cp-' + idx);
-
-    const doFeedback = () => {
+    const done = () => {
       btn.textContent = '✓ COPIÉ !';
       btn.classList.replace('btn-magnet', 'btn-copied');
-      setTimeout(() => {
-        btn.textContent = '🧲 MAGNET';
-        btn.classList.replace('btn-copied', 'btn-magnet');
-      }, 2000);
+      setTimeout(() => { btn.textContent = '🧲 MAGNET'; btn.classList.replace('btn-copied','btn-magnet'); }, 2000);
     };
-
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(text).then(doFeedback).catch(() => fallbackCopy(text, doFeedback));
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(text).then(done).catch(() => fallbackCopy(text, done));
     } else {
-      fallbackCopy(text, doFeedback);
+      fallbackCopy(text, done);
     }
   }
 
@@ -399,6 +633,17 @@
     document.body.removeChild(ta);
     cb();
   }
+
+  // ── removeDownload (appelé depuis HTML généré) ──
+  function removeDownload(encodedMagnet) {
+    const magnet = decodeURIComponent(encodedMagnet);
+    const list = loadDownloads().filter(d => d.magnet !== magnet);
+    saveDownloads(list);
+    renderDownloads();
+  }
+
+  // ── Init badge ──
+  updateBadge(loadDownloads().length);
 </script>
 </body>
 </html>
