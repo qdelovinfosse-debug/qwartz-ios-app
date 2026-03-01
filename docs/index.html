@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>QWARTZ ENGINE</title>
+
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Qwartz">
+  <link rel="apple-touch-icon" href="icon-512.png">
+  <meta name="theme-color" content="#050505">
+
+  <style>
+    :root {
+      --bg: #050505;
+      --card: #111111;
+      --accent: #00d4ff;
+      --danger: #ff4d4d;
+      --safe-high: #00ff88;
+      --safe-med: #a333ff;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      background: var(--bg);
+      color: white;
+      font-family: -apple-system, 'SF Pro Display', 'Inter', sans-serif;
+      min-height: 100dvh;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    .app {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 0 16px;
+    }
+
+    /* ── Header ── */
+    .header {
+      padding-top: calc(env(safe-area-inset-top) + 28px);
+      padding-bottom: 24px;
+      text-align: center;
+    }
+    .logo {
+      font-size: clamp(38px, 12vw, 54px);
+      font-weight: 900;
+      color: #fff;
+      letter-spacing: -3px;
+      line-height: 1;
+    }
+    .logo-sub {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 7px;
+      color: var(--accent);
+      margin-top: 4px;
+    }
+
+    /* ── Search bar ── */
+    .search-wrap {
+      display: flex;
+      gap: 0;
+      margin-bottom: 20px;
+    }
+    .search-input {
+      flex: 1;
+      background: #151515;
+      border: 1px solid #2a2a2a;
+      border-right: none;
+      color: white;
+      font-size: 16px;
+      padding: 14px 16px;
+      border-radius: 12px 0 0 12px;
+      outline: none;
+      -webkit-appearance: none;
+    }
+    .search-input::placeholder { color: #444; }
+    .search-input:focus { border-color: #444; }
+    .search-btn {
+      background: var(--accent);
+      border: none;
+      color: #000;
+      font-weight: 900;
+      font-size: 13px;
+      letter-spacing: 0.5px;
+      padding: 0 20px;
+      border-radius: 0 12px 12px 0;
+      cursor: pointer;
+      -webkit-appearance: none;
+    }
+    .search-btn:active { opacity: 0.8; }
+
+    /* ── Results meta ── */
+    .results-meta {
+      font-size: 11px;
+      color: #444;
+      margin-bottom: 12px;
+    }
+
+    /* ── Result card ── */
+    .card {
+      background: var(--card);
+      border: 1px solid #1e1e1e;
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 10px;
+    }
+
+    .badge {
+      display: inline-block;
+      font-size: 9px;
+      font-weight: 900;
+      padding: 4px 9px;
+      border-radius: 5px;
+      margin-bottom: 9px;
+      letter-spacing: 0.3px;
+    }
+    .badge-high   { background: var(--safe-high); color: #000; }
+    .badge-medium { background: var(--safe-med);  color: #fff; }
+    .badge-low    { background: #282828; color: #666; }
+
+    .file-name {
+      font-size: 15px;
+      font-weight: 600;
+      color: #fff;
+      line-height: 1.35;
+      word-break: break-word;
+      margin-bottom: 8px;
+    }
+
+    .file-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      margin-bottom: 14px;
+    }
+    .seeds { color: var(--safe-high); font-weight: 800; }
+    .sep   { color: #333; }
+    .size  { color: #555; }
+
+    .btn-row { display: flex; gap: 8px; }
+
+    .btn {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 11px 8px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 800;
+      border: none;
+      cursor: pointer;
+      text-decoration: none;
+      -webkit-appearance: none;
+      letter-spacing: 0.2px;
+    }
+    .btn:active { opacity: 0.8; }
+    .btn-dl     { background: var(--accent); color: #000; }
+    .btn-magnet { background: var(--danger); color: #fff; }
+    .btn-copied { background: #1a7a3c; color: #fff; }
+
+    /* ── States ── */
+    .state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 80px 20px;
+      text-align: center;
+    }
+    .state-icon { font-size: 48px; }
+    .state-title { font-size: 17px; font-weight: 600; color: #444; }
+    .state-sub   { font-size: 13px; color: #333; }
+
+    .spinner {
+      width: 36px; height: 36px;
+      border: 3px solid #222;
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Install banner (iOS only) ── */
+    .install-banner {
+      display: none;
+      align-items: center;
+      gap: 10px;
+      background: #111;
+      border: 1px solid #2a2a2a;
+      border-radius: 12px;
+      padding: 12px 14px;
+      margin-bottom: 18px;
+      font-size: 13px;
+      color: #aaa;
+    }
+    .install-banner .arrow { color: var(--accent); font-size: 18px; }
+    .install-banner.visible { display: flex; }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="logo">QWARTZ</div>
+    <div class="logo-sub">ENGINE</div>
+  </div>
+
+  <!-- Install banner (shown on iOS Safari outside standalone) -->
+  <div class="install-banner" id="installBanner">
+    <span class="arrow">⬆</span>
+    <span>Appuie sur <strong>Partager</strong> puis <strong>"Sur l'écran d'accueil"</strong> pour installer l'app</span>
+  </div>
+
+  <!-- Search -->
+  <div class="search-wrap">
+    <input
+      type="search"
+      id="searchInput"
+      class="search-input"
+      placeholder="Rechercher..."
+      autocorrect="off"
+      autocapitalize="off"
+      enterkeyhint="search"
+    >
+    <button class="search-btn" id="searchBtn" onclick="doSearch()">SEARCH</button>
+  </div>
+
+  <!-- Content -->
+  <div id="content">
+    <div class="state">
+      <div class="state-icon">✦</div>
+      <div class="state-title">Lance une recherche</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // ── Service Worker ──
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  }
+
+  // ── iOS Install Banner ──
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isStandalone = window.navigator.standalone === true;
+  if (isIOS && !isStandalone) {
+    document.getElementById('installBanner').classList.add('visible');
+  }
+
+  // ── Search ──
+  const input = document.getElementById('searchInput');
+  const content = document.getElementById('content');
+
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(); });
+
+  function formatSize(bytes) {
+    const n = parseInt(bytes, 10);
+    if (isNaN(n)) return 'N/A';
+    if (n >= 1073741824) return (n / 1073741824).toFixed(2) + ' Go';
+    if (n >= 1048576)    return (n / 1048576).toFixed(2) + ' Mo';
+    if (n >= 1024)       return (n / 1024).toFixed(2) + ' Ko';
+    return n + ' o';
+  }
+
+  async function doSearch() {
+    const q = input.value.trim();
+    if (!q) return;
+    input.blur();
+
+    content.innerHTML = `
+      <div class="state">
+        <div class="spinner"></div>
+        <div class="state-sub">Recherche en cours...</div>
+      </div>`;
+
+    try {
+      const url = `https://apibay.org/q.php?q=${encodeURIComponent(q)}`;
+      const res = await fetch(url);
+      const items = await res.json();
+
+      const active = items
+        .filter(i => i.id !== '0' && parseInt(i.seeders) > 0)
+        .slice(0, 40)
+        .map(i => {
+          const seeds = parseInt(i.seeders);
+          const magnet = `magnet:?xt=urn:btih:${i.info_hash}&dn=${encodeURIComponent(i.name)}`;
+          let badgeClass, badgeLabel;
+          if      (i.status === 'vip')     { badgeClass = 'badge-high';   badgeLabel = 'TRÈS SAFE'; }
+          else if (i.status === 'trusted') { badgeClass = 'badge-medium'; badgeLabel = 'SAFE'; }
+          else                             { badgeClass = 'badge-low';    badgeLabel = 'NON VÉRIFIÉ'; }
+          return { name: i.name, seeds, size: formatSize(i.size), magnet, badgeClass, badgeLabel };
+        })
+        .sort((a, b) => {
+          const rank = c => c === 'badge-high' ? 0 : c === 'badge-medium' ? 1 : 2;
+          return rank(a.badgeClass) - rank(b.badgeClass) || b.seeds - a.seeds;
+        });
+
+      if (!active.length) {
+        content.innerHTML = `
+          <div class="state">
+            <div class="state-icon">🔍</div>
+            <div class="state-title">Aucun résultat actif</div>
+            <div class="state-sub">Essaie un autre terme</div>
+          </div>`;
+        return;
+      }
+
+      const html = `
+        <div class="results-meta">${active.length} résultat(s) avec seeders actifs</div>
+        ${active.map((r, idx) => `
+          <div class="card">
+            <span class="badge ${r.badgeClass}">${r.badgeLabel}</span>
+            <div class="file-name">${escHtml(r.name)}</div>
+            <div class="file-meta">
+              <span class="seeds">▲ ${r.seeds} SEEDS</span>
+              <span class="sep">•</span>
+              <span class="size">${r.size}</span>
+            </div>
+            <div class="btn-row">
+              <a href="${escHtml(r.magnet)}" class="btn btn-dl">⬇ TÉLÉCHARGER</a>
+              <button class="btn btn-magnet" id="cp-${idx}" onclick="copyMagnet(${idx}, '${encodeURIComponent(r.magnet)}')">🧲 MAGNET</button>
+            </div>
+          </div>`).join('')}`;
+
+      content.innerHTML = html;
+
+    } catch (e) {
+      content.innerHTML = `
+        <div class="state">
+          <div class="state-icon">⚠️</div>
+          <div class="state-title">Erreur de connexion</div>
+          <div class="state-sub">${e.message}</div>
+        </div>`;
+    }
+  }
+
+  function copyMagnet(idx, encoded) {
+    const text = decodeURIComponent(encoded);
+    navigator.clipboard.writeText(text).catch(() => {
+      const ta = document.createElement('textarea');
+      ta.value = text; document.body.appendChild(ta);
+      ta.select(); document.execCommand('copy');
+      document.body.removeChild(ta);
+    });
+    const btn = document.getElementById(`cp-${idx}`);
+    btn.textContent = '✓ COPIÉ !';
+    btn.classList.remove('btn-magnet');
+    btn.classList.add('btn-copied');
+    setTimeout(() => {
+      btn.textContent = '🧲 MAGNET';
+      btn.classList.remove('btn-copied');
+      btn.classList.add('btn-magnet');
+    }, 2000);
+  }
+
+  function escHtml(s) {
+    return s.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+</script>
+</body>
+</html>
