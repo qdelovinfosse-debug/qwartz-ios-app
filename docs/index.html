@@ -3,11 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta http-equiv="Content-Security-Policy" content="default-src * 'unsafe-inline' 'unsafe-eval' data: blob:;">
   <title>QWARTZ ENGINE</title>
 
   <!-- PWA -->
   <link rel="manifest" href="manifest.json">
   <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Qwartz">
   <link rel="apple-touch-icon" href="icon-512.png">
@@ -258,12 +260,14 @@
     document.getElementById('installBanner').classList.add('visible');
   }
 
-  // ── Search ──
-  const input = document.getElementById('searchInput');
+  // ── State ──
+  const input   = document.getElementById('searchInput');
   const content = document.getElementById('content');
+  let torrents  = [];
 
   input.addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(); });
 
+  // ── Helpers ──
   function formatSize(bytes) {
     const n = parseInt(bytes, 10);
     if (isNaN(n)) return 'N/A';
@@ -273,6 +277,25 @@
     return n + ' o';
   }
 
+  function escHtml(s) {
+    return String(s)
+      .replace(/&/g,'&amp;')
+      .replace(/"/g,'&quot;')
+      .replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;');
+  }
+
+  // ── Fetch via CORS proxy ──
+  async function fetchTorrents(q) {
+    const apiUrl  = 'https://apibay.org/q.php?q=' + encodeURIComponent(q);
+    const proxy   = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(apiUrl);
+    const res     = await fetch(proxy, { cache: 'no-store' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const text = await res.text();
+    return JSON.parse(text);
+  }
+
+  // ── Main search ──
   async function doSearch() {
     const q = input.value.trim();
     if (!q) return;
@@ -285,16 +308,14 @@
       </div>`;
 
     try {
-      const url = `https://apibay.org/q.php?q=${encodeURIComponent(q)}`;
-      const res = await fetch(url);
-      const items = await res.json();
+      const items = await fetchTorrents(q);
 
-      const active = items
+      torrents = items
         .filter(i => i.id !== '0' && parseInt(i.seeders) > 0)
         .slice(0, 40)
         .map(i => {
-          const seeds = parseInt(i.seeders);
-          const magnet = `magnet:?xt=urn:btih:${i.info_hash}&dn=${encodeURIComponent(i.name)}`;
+          const seeds  = parseInt(i.seeders);
+          const magnet = 'magnet:?xt=urn:btih:' + i.info_hash + '&dn=' + encodeURIComponent(i.name);
           let badgeClass, badgeLabel;
           if      (i.status === 'vip')     { badgeClass = 'badge-high';   badgeLabel = 'TRÈS SAFE'; }
           else if (i.status === 'trusted') { badgeClass = 'badge-medium'; badgeLabel = 'SAFE'; }
@@ -306,7 +327,7 @@
           return rank(a.badgeClass) - rank(b.badgeClass) || b.seeds - a.seeds;
         });
 
-      if (!active.length) {
+      if (!torrents.length) {
         content.innerHTML = `
           <div class="state">
             <div class="state-icon">🔍</div>
@@ -316,56 +337,67 @@
         return;
       }
 
-      const html = `
-        <div class="results-meta">${active.length} résultat(s) avec seeders actifs</div>
-        ${active.map((r, idx) => `
-          <div class="card">
-            <span class="badge ${r.badgeClass}">${r.badgeLabel}</span>
-            <div class="file-name">${escHtml(r.name)}</div>
-            <div class="file-meta">
-              <span class="seeds">▲ ${r.seeds} SEEDS</span>
-              <span class="sep">•</span>
-              <span class="size">${r.size}</span>
-            </div>
-            <div class="btn-row">
-              <a href="${escHtml(r.magnet)}" class="btn btn-dl">⬇ TÉLÉCHARGER</a>
-              <button class="btn btn-magnet" id="cp-${idx}" onclick="copyMagnet(${idx}, '${encodeURIComponent(r.magnet)}')">🧲 MAGNET</button>
-            </div>
-          </div>`).join('')}`;
-
-      content.innerHTML = html;
+      renderResults();
 
     } catch (e) {
       content.innerHTML = `
         <div class="state">
           <div class="state-icon">⚠️</div>
           <div class="state-title">Erreur de connexion</div>
-          <div class="state-sub">${e.message}</div>
+          <div class="state-sub">${escHtml(e.message)}</div>
         </div>`;
     }
   }
 
-  function copyMagnet(idx, encoded) {
-    const text = decodeURIComponent(encoded);
-    navigator.clipboard.writeText(text).catch(() => {
-      const ta = document.createElement('textarea');
-      ta.value = text; document.body.appendChild(ta);
-      ta.select(); document.execCommand('copy');
-      document.body.removeChild(ta);
-    });
-    const btn = document.getElementById(`cp-${idx}`);
-    btn.textContent = '✓ COPIÉ !';
-    btn.classList.remove('btn-magnet');
-    btn.classList.add('btn-copied');
-    setTimeout(() => {
-      btn.textContent = '🧲 MAGNET';
-      btn.classList.remove('btn-copied');
-      btn.classList.add('btn-magnet');
-    }, 2000);
+  function renderResults() {
+    const cards = torrents.map((r, idx) => `
+      <div class="card">
+        <span class="badge ${r.badgeClass}">${r.badgeLabel}</span>
+        <div class="file-name">${escHtml(r.name)}</div>
+        <div class="file-meta">
+          <span class="seeds">▲ ${r.seeds} SEEDS</span>
+          <span class="sep">•</span>
+          <span class="size">${r.size}</span>
+        </div>
+        <div class="btn-row">
+          <a href="${escHtml(r.magnet)}" class="btn btn-dl">⬇ TÉLÉCHARGER</a>
+          <button class="btn btn-magnet" id="cp-${idx}" onclick="copyMagnet(${idx})">🧲 MAGNET</button>
+        </div>
+      </div>`).join('');
+
+    content.innerHTML =
+      `<div class="results-meta">${torrents.length} résultat(s) avec seeders actifs</div>` + cards;
   }
 
-  function escHtml(s) {
-    return s.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  function copyMagnet(idx) {
+    const text = torrents[idx].magnet;
+    const btn  = document.getElementById('cp-' + idx);
+
+    const doFeedback = () => {
+      btn.textContent = '✓ COPIÉ !';
+      btn.classList.replace('btn-magnet', 'btn-copied');
+      setTimeout(() => {
+        btn.textContent = '🧲 MAGNET';
+        btn.classList.replace('btn-copied', 'btn-magnet');
+      }, 2000);
+    };
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(doFeedback).catch(() => fallbackCopy(text, doFeedback));
+    } else {
+      fallbackCopy(text, doFeedback);
+    }
+  }
+
+  function fallbackCopy(text, cb) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0';
+    document.body.appendChild(ta);
+    ta.focus(); ta.select();
+    try { document.execCommand('copy'); } catch(e) {}
+    document.body.removeChild(ta);
+    cb();
   }
 </script>
 </body>
